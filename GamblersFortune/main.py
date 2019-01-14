@@ -1,50 +1,29 @@
 import pygame
 import random
+from scipy import stats
 
-STARTING_BLUE_BLOBS = 10
-STARTING_RED_BLOBS = 3
 START_Y = 125
 MAX_Y = 250
 MIN_Y = 0
 SCALE = 10
+SPEED = 100
 
 WIDTH = 800
 HEIGHT = 600
+BOTTOM_LINE_Y = HEIGHT // 2 + 100
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
 MAX_STEPS = 1000
+NUM_SIMULATIONS = 1000
+
+WIN_PROBABILITY = 0.55
 
 game_display = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Testing")
+pygame.display.set_caption("Gambler's Ruin")
 clock = pygame.time.Clock()
-
-class Blob:
-
-    def __init__(self, color):
-        self.x = random.randrange(0, WIDTH)
-        self.y = random.randrange(0, HEIGHT)
-        self.size = random.randrange(4, 8)
-        self.color = color
-
-    def move(self):
-        self.move_x = random.randrange(-1, 2)
-        self.move_y = random.randrange(-1, 2)
-        self.x += self.move_x
-        self.y += self.move_y
-
-        if self.x < 0:
-            self.x = 0
-        elif self.x > WIDTH:
-            self.x = WIDTH
-
-        if self.y < 0:
-            self.y = 0
-        elif self.y > HEIGHT:
-            self.y = HEIGHT
-
 
 
 class Line:
@@ -55,25 +34,35 @@ class Line:
         self.color = color
 
 
-def draw_environment(blobs):
-    game_display.fill(WHITE)
-    for blob in blobs:
-        pygame.draw.circle(game_display, blob.color, [blob.x, blob.y], blob.size)
-    pygame.display.update()
-    [blob.move() for blob in blobs]
-
-
-def draw_environment2(lines, count, step):
+def draw_environment(lines, count, step, theory):
     game_display.fill(WHITE)
     for line in lines:
         pygame.draw.line(game_display, line.color, line.start, line.end)
 
-    #f = pygame.font.Font(None, 20)
-    #f.render("foo", True, [0, 0, 0], [255, 255, 255])
-    myfont = pygame.font.SysFont('Comic Sans MS', 30)
-    textsurface = myfont.render('{} / {}'.format(count, step), False, (0, 0, 0))
+    denom = 1
+    if step != 0:
+        denom = step
+
+    myfont = pygame.font.SysFont('Comic Sans MS', 10)
+    textsurface = myfont.render('{} / {} = {:.3f}, Total = {}, Win Prob. = {}, Start = {:.2f}, Min = {:.2f}, Max = {:.2f}, Theory = {:.4f} (to 4.d.p.)'.\
+                                format(count, step, count/denom, NUM_SIMULATIONS, WIN_PROBABILITY, START_Y/SCALE,\
+                                       MIN_Y/SCALE, MAX_Y/SCALE, theory), False, (0, 0, 0))
     game_display.blit(textsurface, (0, 0))
     pygame.display.update()
+
+
+def get_theory():
+    theory = 0
+    k = START_Y/SCALE
+    N = MAX_Y/SCALE
+
+    if WIN_PROBABILITY == 0.5:
+        theory = 1 - k / N
+    else:
+        ratio = (1 - WIN_PROBABILITY)/WIN_PROBABILITY
+        theory = (pow(ratio, k) - pow(ratio, N))/(1 - pow(ratio, N))
+
+    return theory
 
 
 def stop(y, min_y, max_y):
@@ -85,12 +74,10 @@ def stop(y, min_y, max_y):
         return False
 
 
-def propogate():
+def propagate():
     scale_movements = SCALE
 
     lines = list()
-    #lines.append(Line(RED, (0, HEIGHT // 2), (WIDTH, HEIGHT // 2)))
-    #lines.append(Line(GREEN, (0, HEIGHT // 2 - MAX_Y), (WIDTH, HEIGHT // 2 - MAX_Y)))
     y = HEIGHT // 2 - START_Y
     prev_y = y
     count = list()
@@ -113,45 +100,123 @@ def propogate():
         else:
             count.append(0)
 
-    return lines, prev_y >= (HEIGHT // 2), count
+    return lines, count
+
+
+def get_next_value(p):
+    '''
+    A function which returns a 1 or a -1. p is the probability of obtaining a 1
+    :param p: float between 0 and 1. The probability of success
+    :return: integer. Either -1 or 1
+    '''
+    return stats.bernoulli.rvs(p)*2 - 1
+
+
+def propagate2(start, minimum, maximum):
+    # This scales the movements to speed up the process
+    scale_movements = SCALE
+
+    # To contain the trajectory information
+    lines = list()
+
+    # This is the start. (0,0) is the top left of the screen. -start is actually +start in terms of value
+    y = minimum - start
+
+    # We need the previous y value in order to start the drawing of the next line from this point
+    prev_y = y
+
+    # This stores the steps where the value hit the min
+    count = list()
+
+    # Each simulation is to pick a random color for the trajectory
+    r = random.randrange(0, 255)
+    g = random.randrange(0, 255)
+    b = random.randrange(0, 255)
+
+    # Loop and randomly increase by 1 or decrease by 1
+    for i in range(1, MAX_STEPS):
+        # The value of y increases by 1 or decreases by 1 according to a bernoulli random variable. The step is then
+        # scaled
+        y = get_next_value(WIN_PROBABILITY) * scale_movements
+
+        # Save a line to the lines list that starts from the previous position and ends at the current position
+        lines.append(Line((r, g, b), (i - 1, prev_y), (i, prev_y - y)))
+
+        # Save the previous position as this position
+        prev_y = prev_y - y
+
+        # If the current y value hits the min value, it is a bankrupt, if it hits the max value it is not a bankrupt
+        if stop(prev_y, maximum, minimum):
+            if prev_y <= maximum:
+                count.append(0)
+            else:
+                count.append(1)
+            break
+        else:
+            count.append(0)
+
+    return lines, count
 
 
 def main():
-    blobs = [Blob(color=BLUE) for i in range(STARTING_BLUE_BLOBS)]
-    blobs.extend([Blob(color=RED) for i in range(STARTING_RED_BLOBS)])
-
-    bankrupt = False
+    # lines holds the trajectory information
     lines = list()
-    count = list()
-    total = 100
 
+    # Holds simulation information
+    sim_no = list()
+
+    # count holds information about whether a bankrupt has occurred or not at each step
+    count = list()
+
+    # The number or simulations/trajectories
+    total = NUM_SIMULATIONS
+
+    # Run the simulations
     for i in range(0, total):
-        lines_temp, bankrupt, count_temp = propogate()
+        # Run a simulation and store the trajectory and count information
+        lines_temp, count_temp = propagate2(START_Y, BOTTOM_LINE_Y, BOTTOM_LINE_Y - MAX_Y)
+
+        # Extend the main count information with the count data from the simulation
         count.extend(count_temp)
+
+        # Save simulation number
+        sim_no.extend([i]*len(lines_temp))
+
+        # Extend the main trajectory information with the trajectory information from this simulation
         lines.extend(lines_temp)
 
+    # Debug info
     print(sum(count)/total)
 
-    step = 0
-
+    # default_lines contains information to draw the objects on the screen that should alway be there
+    # i.e. the red line representing $0 and the green line representing $M
     default_lines = list()
-    default_lines.append(Line(RED, (0, HEIGHT // 2), (WIDTH, HEIGHT // 2)))
-    default_lines.append(Line(GREEN, (0, HEIGHT // 2 - MAX_Y), (WIDTH, HEIGHT // 2 - MAX_Y)))
+    default_lines.append(Line(RED, (0, BOTTOM_LINE_Y), (WIDTH, BOTTOM_LINE_Y)))
+    default_lines.append(Line(GREEN, (0, BOTTOM_LINE_Y - MAX_Y), (WIDTH, BOTTOM_LINE_Y - MAX_Y)))
+
+    # Form a final list of lines which contain the default lines and the simulation lines
     final_lines = default_lines
     final_lines.extend(lines)
 
+    theory = get_theory()
+
+    step = 0
     while True:
+        # Quit if the X is pressed
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
 
+        # We want to progress the simulation step by step. The first 2 elements of the final_lines list are the
+        # objects that are always there
         if step < len(lines):
-            draw_environment2(final_lines[:step+2], sum(count[:step]), i + 1)
+            draw_environment(final_lines[:step+2], sum(count[:step]), sim_no[step], theory)
         else:
-            draw_environment2(final_lines, sum(count), i + 1)
+            draw_environment(final_lines, sum(count), i + 1, theory)
         clock.tick(60)
-        step += 1
+        step += SPEED
+
 
 if __name__ == '__main__':
     pygame.font.init()
