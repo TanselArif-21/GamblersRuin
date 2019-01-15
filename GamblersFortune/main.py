@@ -2,8 +2,8 @@ import pygame
 import random
 from scipy import stats
 
-START_Y = 125
-MAX_Y = 250
+START_Y = 30
+MAX_Y = 260
 MIN_Y = 0
 SCALE = 10
 SPEED = 100
@@ -19,7 +19,7 @@ GREEN = (0, 255, 0)
 MAX_STEPS = 1000
 NUM_SIMULATIONS = 1000
 
-WIN_PROBABILITY = 0.55
+WIN_PROBABILITY = 0.5
 
 game_display = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Gambler's Ruin")
@@ -43,24 +43,44 @@ def draw_environment(lines, count, step, theory):
     if step != 0:
         denom = step
 
+    # Get the average number of steps
+    avg_steps = (len(lines)-2)/denom
+
     myfont = pygame.font.SysFont('Comic Sans MS', 10)
-    textsurface = myfont.render('{} / {} = {:.3f}, Total = {}, Win Prob. = {}, Start = {:.2f}, Min = {:.2f}, Max = {:.2f}, Theory = {:.4f} (to 4.d.p.)'.\
+    textsurface = myfont.render('{} / {} = {:.3f}, Total = {}, Win Prob. = {}, Start = {:.2f}, Min = {:.2f}, Max = {:.2f}, Avg. Steps = {:.2f}'.\
                                 format(count, step, count/denom, NUM_SIMULATIONS, WIN_PROBABILITY, START_Y/SCALE,\
-                                       MIN_Y/SCALE, MAX_Y/SCALE, theory), False, (0, 0, 0))
+                                       MIN_Y/SCALE, MAX_Y/SCALE, avg_steps), False, (0, 0, 0))
+    myfont_theory = pygame.font.SysFont('Comic Sans MS', 10)
+    textsurface_theory = myfont_theory.render('Theory (bankrupt probability) = {:.4f} (to 4.d.p.)  Theory (Expected Steps) = {:.2f} (to 2.d.p.)'.\
+                                format(theory[0], theory[1]), False, (0, 0, 0))
     game_display.blit(textsurface, (0, 0))
+
+    game_display.blit(textsurface_theory, (0, 20))
     pygame.display.update()
 
 
 def get_theory():
-    theory = 0
+    theory = []
     k = START_Y/SCALE
     N = MAX_Y/SCALE
 
+    # Get the bankrupt probability
     if WIN_PROBABILITY == 0.5:
-        theory = 1 - k / N
+        theory.append(1 - k / N)
+    elif WIN_PROBABILITY == 0:
+        theory.append(1)
     else:
         ratio = (1 - WIN_PROBABILITY)/WIN_PROBABILITY
-        theory = (pow(ratio, k) - pow(ratio, N))/(1 - pow(ratio, N))
+        theory.append((pow(ratio, k) - pow(ratio, N))/(1 - pow(ratio, N)))
+
+    # Get the expected number of steps
+    if WIN_PROBABILITY == 0.5:
+        theory.append(N*k - k**2)
+    elif WIN_PROBABILITY == 0:
+        theory.append(k)
+    else:
+        ratio = N/((2*WIN_PROBABILITY - 1)*(1-pow((1-WIN_PROBABILITY)/WIN_PROBABILITY, N)))
+        theory.append(ratio*(1-pow((1-WIN_PROBABILITY)/WIN_PROBABILITY, k)) - k/(2*WIN_PROBABILITY-1))
 
     return theory
 
@@ -112,7 +132,7 @@ def get_next_value(p):
     return stats.bernoulli.rvs(p)*2 - 1
 
 
-def propagate2(start, minimum, maximum):
+def propagate(start, minimum, maximum):
     # This scales the movements to speed up the process
     scale_movements = SCALE
 
@@ -174,7 +194,7 @@ def main():
     # Run the simulations
     for i in range(0, total):
         # Run a simulation and store the trajectory and count information
-        lines_temp, count_temp = propagate2(START_Y, BOTTOM_LINE_Y, BOTTOM_LINE_Y - MAX_Y)
+        lines_temp, count_temp = propagate(START_Y, BOTTOM_LINE_Y, BOTTOM_LINE_Y - MAX_Y)
 
         # Extend the main count information with the count data from the simulation
         count.extend(count_temp)

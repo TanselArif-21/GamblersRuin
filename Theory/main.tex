@@ -132,6 +132,159 @@ Giving the final equation as:
     u_n = 1 - \frac{n}{N}
 \end{equation}
 
+We have the final equations for the probability of bankruptcy as:
+
+\begin{equation}
+   u_n=% 
+   \begin{cases}
+     1 - \frac{n}{N} &\text{if $p = 0.5$} \\
+     \frac{\left( \frac{1-p}{p} \right)^n-\left( \frac{1-p}{p} \right)^N}{1 - \left( \frac{1-p}{p} \right)^N} &\text{if $p \neq 0.5$ and $p \neq 0$} \\
+     1 &\text{if $p = 0$}
+   \end{cases}
+\end{equation}
+
+Note: The case where $p=0$ is obtained by multiplying the numerator and denominator of the $p\neq 0.5$ case by $p^N$ and simplifying.
+
+\section{Expected Number of Steps} % Numbered section
+
+We can now ask the question "How many times is the Gambler expected to be able to gamble until he stops?". We can approach the solution in a similar manner as the probability calculation in the previous section. Namely, conditioning on the first gamble.
+
+Let $E_n$ be the expected number of steps until the Gambler's fortune reaches either \$0 or \$N if the fortune starts at \$n. We then condition on the first gamble as follows:
+
+$$Expected Steps from n = p \times (1 + Expected Steps from n+1) + q \times (1 + Expected Steps from n-1) $$
+$$E_n = p \times (1 + E_{n+1}) + q \times (1 + E_{n-1}) $$
+
+Re-writing:
+
+$$p \times E_{n+1} - E_n + q \times E_{n-1} = -1$$
+
+Unlike in the previous section, this is a heterogeneous equation. A solution to this equation can be written in the form: $E_n = w_n + v_n$. We first find a solution to the homogeneous equation ($w_n$) and a solution to the heterogeneous equation ($v_n$). 
+
+As before, let $w_n = A \lambda^n$, where $A$ is a constant. We have:
+
+$$p w_{n+1} - w_n + q w_{n-1} = 0$$
+$$\implies \lambda^2 - \frac{1}{p} \lambda + \frac{q}{p} = 0$$
+
+Giving solutions:
+
+$$\lambda_{1,2} = (\frac{q}{p}, 1)$$
+
+Our solution to the homogeneous equation is then:
+
+$$w_n = A \lambda_1^n + B \lambda_2^n = A (\frac{q}{p})^n + B$$
+
+For a particular solution ($v_n$) to the heterogeneous equation we try $v_n = Cn$:
+
+$$p C(n+1) - Cn + q C(n-1) = -1 $$
+$$\implies pC - qC = -1$$
+
+Giving:
+
+$$C = \frac{-1}{p-q}$$
+
+and our particular solution is 
+
+$$v_n = \frac{-n}{p-q}$$
+
+Giving the full solution as
+
+\begin{equation}
+    E_n = w_n + v_n = A (\frac{q}{p})^n + B - \frac{n}{p-q} 
+\end{equation}
+
+Using the boundary conditions $E_0 = 0, E_N = 0$
+
+$$E_0 = A + B = 0 \implies B = -A$$
+
+$$E_N = A (\frac{q}{p})^N + B - \frac{N}{p-q} = 0$$
+$$\implies A((\frac{q}{p})^N - 1) = \frac{N}{p-q}$$
+$$\implies A = \frac{N}{(p-q)((\frac{q}{p})^N - 1)}$$
+
+Our final solution is then (for $p \neq \frac{1}{2}$)
+
+\begin{equation}
+    E_n = \frac{N}{(p-q)((\frac{q}{p})^N - 1)} (\frac{q}{p})^n - \frac{N}{(p-q)((\frac{q}{p})^N - 1)} - \frac{n}{p-q} 
+\end{equation}
+
+Suppose $p = \frac{1}{2}$. We get a repeated solution $\lambda = 1$, meaning we try the next most complicated solution to the homogeneous equation
+
+$$w_n = (An+B) \lambda^n = (An+B)$$
+
+For the particular solution to the equation
+
+$$E_{n+1} - 2 E_n + E_{n-1} = -2$$
+
+we try $v_n = Cn^2$ as the next most complicated particular solution. Substituting this into the heterogeneous equation above
+
+$$C(n+1)^2 - 2Cn^2 + C(n-1)^2 = -1$$
+
+giving 
+
+$$C = -1$$
+
+The full equation is then
+
+$$E_n = w_n + v_n = An + B - n^2$$
+
+Applying the boundary conditions
+
+$$E_0 = B = 0$$
+
+$$E_N = AN - N^2 = 0 \implies A = N$$
+
+Giving the final equation for $E_n$
+
+\begin{equation}
+    E_n = w_n + v_n = Nn - n^2 
+\end{equation}
+
+In summary
+
+\begin{equation}
+   E_n=% 
+   \begin{cases}
+     Nn - n^2 &\text{if $p = 0.5$} \\
+     \frac{N}{(p-q)((\frac{q}{p})^N - 1)} (\frac{q}{p})^n - \frac{N}{(p-q)((\frac{q}{p})^N - 1)} - \frac{n}{p-q}  &\text{if $p \neq 0.5$ and $p \neq 0$} \\
+     n &\text{if $p = 0$}
+   \end{cases}
+\end{equation}
+
+Note: The case where $p=0$ is obtained by multiplying the numerator and denominator of the first to terms in the equation for the $p\neq 0.5$ case by $p^N$ and simplifying.
+
+\section{Simulations} % Numbered section
+
+Simulations are carried out using the accompanying Python app utilising Pygame for visualisation. 
+
+It is expected that if the win probability is 1 ($p=1$), the probability of the Gambler going bankrupt should be 0 and the expected number of steps should be the number of steps required to go from the current fortune to \$N. This can be seen in figure \ref{fig:sim4} where each of the 1000 simulations carried out follow the exact same path. If the the win probability is 0 ($p=0$), then we expect that the probability of the Gambler going bankrupt should be 1 and the expected number of steps should be the number of steps required to go from the current fortune to \$0. This can be seen in figure \ref{fig:sim5} where each of the 1000 simulations carried out follow the exact same path. Two further simulations are carried out with identical parameters but different starting fortunes. Figures \ref{fig:sim3} and \ref{fig:sim6} show that a starting fortune closer to \$0 increases the probability of bankruptcy.
+
+\begin{figure}[r]
+    \centering
+    \includegraphics[width=\textwidth]{Simulation3}
+    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 0.5$, $N = 26$. The theory results in a probability 0.5 of bankruptcy and an expected number of steps of 169. The horizontal green line represents \$N and the hosrizontal red line represents \$0. We can see that the simulated probability of 0.498 and the simulated average number of steps of 173 is close to the theoretical values.}
+    \label{fig:sim3}
+\end{figure}
+
+\begin{figure}[r]
+    \centering
+    \includegraphics[width=\textwidth]{Simulation4}
+    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 1$, $N = 26$. The theory results in a probability 0 of bankruptcy and an expected number of steps of 13. The horizontal green line represents \$N and the hosrizontal red line represents \$0. We can see that the simulated probability of 0 and the simulated average number of steps of 13 exactly match the theoretical values.}
+    \label{fig:sim4}
+\end{figure}
+
+\begin{figure}[r]
+    \centering
+    \includegraphics[width=\textwidth]{Simulation5}
+    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 0$, $N = 26$. The theory results in a probability 1 of bankruptcy and an expected number of steps of 13. The horizontal green line represents \$N and the hosrizontal red line represents \$0. We can see that the simulated probability of 1 and the simulated average number of steps of 13 exactly match the theoretical values.}
+    \label{fig:sim5}
+\end{figure}
+
+\begin{figure}[r]
+    \centering
+    \includegraphics[width=\textwidth]{Simulation6}
+    \caption{This is a plot of 1000 simulations with $k = 3$, $p = 0.5$, $N = 26$. The theory results in a probability 0.8846 of bankruptcy and an expected number of steps of 69. The horizontal green line represents \$N and the hosrizontal red line represents \$0. We can see that the simulated probability of 0.898 and the simulated average number of steps of 68.85 match the theoretical values closely.}
+    \label{fig:sim6}
+\end{figure}
+
 %----------------------------------------------------------------------------------------
 
 \end{document}
