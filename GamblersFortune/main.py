@@ -2,25 +2,67 @@ import pygame
 import random
 from scipy import stats
 
-START_Y = 30
-MAX_Y = 260
-MIN_Y = 0
-SCALE = 10
-SPEED = 100
+# Starting fortune
+try:
+    START_Y = int(input('Starting fortune! (Def = 3): '))*10
+except ValueError:
+    START_Y = 30
 
+# Max fortune
+try:
+    MAX_Y = int(input('Max fortune! (Def = 26): '))*10
+except ValueError:
+    MAX_Y = 260
+
+# Min fortune
+try:
+    MIN_Y = int(input('Min fortune! (Def = 0): '))*10
+except ValueError:
+    MIN_Y = 260
+
+# Scale movements in order to speed up the random walk
+SCALE = 10
+
+# Speed at which the random walk is displayed
+try:
+    SPEED = int(input('Steps per frame! (Def = 100): '))
+except ValueError:
+    SPEED = 100
+
+# Width of the game display
 WIDTH = 800
+
+# Height of the game display
 HEIGHT = 600
+
+# The line corresponding to 0 fortune
 BOTTOM_LINE_Y = HEIGHT // 2 + 100
+
+# Preset colors
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
-MAX_STEPS = 1000
-NUM_SIMULATIONS = 1000
+# Maximum number of steps per simulation. This is to guard against infinite steps
+try:
+    MAX_STEPS = int(input('Maximum number of steps per simulation! (Def = 1000): '))
+except ValueError:
+    MAX_STEPS = 1000
 
-WIN_PROBABILITY = 0.5
+# Total number of simulations/trajectories to run
+try:
+    NUM_SIMULATIONS = int(input('Total number of simulations! (Def = 1000): '))
+except ValueError:
+    NUM_SIMULATIONS = 1000
 
+# The probability of a win
+try:
+    WIN_PROBABILITY = float(input('Probability of a win! (Def = 0.5): '))
+except ValueError:
+    WIN_PROBABILITY = 0.5
+
+# The display object
 game_display = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Gambler's Ruin")
 clock = pygame.time.Clock()
@@ -34,7 +76,14 @@ class Line:
         self.color = color
 
 
-def draw_environment(lines, count, step, theory):
+def draw_canvas(lines, count, step, theory):
+    '''
+    A function tasked with drawing lines to the screen.
+    :param lines: a list of line objects to draw
+    :param count: a list of 0's and 1's where a 1 means bankruptcy at that step
+    :param step: an integer to specify which step in the simulation to display to
+    :param theory: a list of 2 floats containing [theoretical probability, theoretical expected steps]
+    '''
     game_display.fill(WHITE)
     for line in lines:
         pygame.draw.line(game_display, line.color, line.start, line.end)
@@ -60,6 +109,11 @@ def draw_environment(lines, count, step, theory):
 
 
 def get_theory():
+    '''
+    A function which calculates the theoretical value for both the expected number of steps and the bankrupt
+    probability
+    :return: A list: [probability of bankruptcy, expected steps]
+    '''
     theory = []
     k = START_Y/SCALE
     N = MAX_Y/SCALE
@@ -86,41 +140,19 @@ def get_theory():
 
 
 def stop(y, min_y, max_y):
-    if y >= max_y:
-        return True
-    elif y <= min_y:
-        return True
+    '''
+    A function which checks the stop conditions.
+    :param y: current value
+    :param min_y: upper limit in screen terms
+    :param max_y: lower limit in screen terms
+    :return: -1 = do not stop, 0 = stop due to bankruptcy, 1 = stop due to becoming rich
+    '''
+    if y <= max_y:
+        return 0
+    elif y >= min_y:
+        return 1
     else:
-        return False
-
-
-def propagate():
-    scale_movements = SCALE
-
-    lines = list()
-    y = HEIGHT // 2 - START_Y
-    prev_y = y
-    count = list()
-
-    r = random.randrange(0, 255)
-    g = random.randrange(0, 255)
-    b = random.randrange(0, 255)
-
-    for i in range(1, MAX_STEPS):
-        y = random.choice([-1, 1]) * scale_movements
-        lines.append(Line((r,g,b), (i - 1, prev_y), (i, prev_y + y)))
-        prev_y = prev_y + y
-
-        if stop(prev_y, HEIGHT // 2 - MAX_Y, HEIGHT // 2):
-            if prev_y <= HEIGHT // 2 - MAX_Y:
-                count.append(0)
-            else:
-                count.append(1)
-            break
-        else:
-            count.append(0)
-
-    return lines, count
+        return -1
 
 
 def get_next_value(p):
@@ -133,6 +165,15 @@ def get_next_value(p):
 
 
 def propagate(start, minimum, maximum):
+    '''
+    A function which simulates the trajectories for the current fortune. This function returns 2 data structures:
+    A list containing the the trajectory value concatenated, and a list of the same size containing information on
+    whether that step resulted in a bankruptcy or not
+    :param start: float between minimum and maximum. Starting amount
+    :param minimum: float. Amount defining bankruptcy
+    :param maximum: float. Amount above which take win is actioned
+    :return: list, list
+    '''
     # This scales the movements to speed up the process
     scale_movements = SCALE
 
@@ -166,11 +207,11 @@ def propagate(start, minimum, maximum):
         prev_y = prev_y - y
 
         # If the current y value hits the min value, it is a bankrupt, if it hits the max value it is not a bankrupt
-        if stop(prev_y, maximum, minimum):
-            if prev_y <= maximum:
-                count.append(0)
-            else:
-                count.append(1)
+        # If bankrupt at this step, append 1 to count for this step, otherwise append 0 to count for this step
+        is_stop = stop(prev_y, minimum, maximum)
+
+        if is_stop >= 0:
+            count.append(is_stop)
             break
         else:
             count.append(0)
@@ -206,9 +247,9 @@ def main():
         lines.extend(lines_temp)
 
     # Debug info
-    print(sum(count)/total)
+    print('Simulated probability = {}'.format(sum(count)/total))
 
-    # default_lines contains information to draw the objects on the screen that should alway be there
+    # default_lines contains information to draw the objects on the screen that should always be there
     # i.e. the red line representing $0 and the green line representing $M
     default_lines = list()
     default_lines.append(Line(RED, (0, BOTTOM_LINE_Y), (WIDTH, BOTTOM_LINE_Y)))
@@ -231,9 +272,9 @@ def main():
         # We want to progress the simulation step by step. The first 2 elements of the final_lines list are the
         # objects that are always there
         if step < len(lines):
-            draw_environment(final_lines[:step+2], sum(count[:step]), sim_no[step], theory)
+            draw_canvas(final_lines[:step+2], sum(count[:step]), sim_no[step], theory)
         else:
-            draw_environment(final_lines, sum(count), i + 1, theory)
+            draw_canvas(final_lines, sum(count), i + 1, theory)
         clock.tick(60)
         step += SPEED
 
