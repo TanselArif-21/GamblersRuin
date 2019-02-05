@@ -48,14 +48,14 @@ The Gambler's Ruin problem frames a gambler who begins gambling with an initial 
 \begin{figure}[r]
     \centering
     \includegraphics[width=\textwidth]{Simulation1}
-    \caption{This is a plot of 10 simulations with $k = 12.5$, $p = 0.55$, $N = 25$. The theory results in a probability of 0.0753 of bankruptcy. The horizontal green line represents \$N and the hosrizontal red line represents \$0.}
+    \caption{This is a plot of 50 simulations with $k = 13$, $p = 0.55$, $N = 25$. The theory results in a probability of 0.0674 of bankruptcy and an expected number of steps of 103.14. The horizontal green line represents \$N and the horizontal red line represents \$0.}
     \label{fig:sim1}
 \end{figure}
 
 \begin{figure}[r]
     \centering
     \includegraphics[width=\textwidth]{Simulation2}
-    \caption{This is a plot of 1000 simulations with $k = 12.5$, $p = 0.55$, $N = 25$. The theory results in a probability of 0.0753 of bankruptcy. The horizontal green line represents \$N and the hosrizontal red line represents \$0.}
+    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 0.55$, $N = 25$. The theory results in a probability of 0.0674 of bankruptcy and an expected number of steps of 103.14. The horizontal green line represents \$N and the horizontal red line represents \$0.}
     \label{fig:sim2}
 \end{figure}
 
@@ -151,7 +151,7 @@ We can now ask the question "How many times is the Gambler expected to be able t
 
 Let $E_n$ be the expected number of steps until the Gambler's fortune reaches either \$0 or \$N if the fortune starts at \$n. We then condition on the first gamble as follows:
 
-$$Expected Steps from n = p \times (1 + Expected Steps from n+1) + q \times (1 + Expected Steps from n-1) $$
+$$\text{Expected Steps from n} = p \times (1 + \text{Expected Steps from n+1}) + q \times (1 + \text{Expected Steps from n-1}) $$
 $$E_n = p \times (1 + E_{n+1}) + q \times (1 + E_{n-1}) $$
 
 Re-writing:
@@ -257,33 +257,37 @@ Simulations are carried out using the accompanying Python app utilising Pygame f
 
 It is expected that if the win probability is 1 ($p=1$), the probability of the Gambler going bankrupt should be 0 and the expected number of steps should be the number of steps required to go from the current fortune to \$N. This can be seen in figure \ref{fig:sim4} where each of the 1000 simulations carried out follow the exact same path. If the the win probability is 0 ($p=0$), then we expect that the probability of the Gambler going bankrupt should be 1 and the expected number of steps should be the number of steps required to go from the current fortune to \$0. This can be seen in figure \ref{fig:sim5} where each of the 1000 simulations carried out follow the exact same path. Two further simulations are carried out with identical parameters but different starting fortunes. Figures \ref{fig:sim3} and \ref{fig:sim6} show that a starting fortune closer to \$0 increases the probability of bankruptcy.
 
-\begin{figure}[r]
+\begin{figure}
     \centering
     \includegraphics[width=\textwidth]{Simulation3}
-    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 0.5$, $N = 26$. The theory results in a probability 0.5 of bankruptcy and an expected number of steps of 169. The horizontal green line represents \$N and the hosrizontal red line represents \$0. We can see that the simulated probability of 0.498 and the simulated average number of steps of 173 is close to the theoretical values.}
+    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 0.5$, $N = 26$. The theory results in a probability 0.5 of bankruptcy and an expected number of steps of 169. The horizontal green line represents \$N and the horizontal red line represents \$0. We can see that the simulated probability of 0.498 and the simulated average number of steps of 173 is close to the theoretical values.}
     \label{fig:sim3}
 \end{figure}
 
-\begin{figure}[r]
+\begin{figure}
     \centering
     \includegraphics[width=\textwidth]{Simulation4}
-    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 1$, $N = 26$. The theory results in a probability 0 of bankruptcy and an expected number of steps of 13. The horizontal green line represents \$N and the hosrizontal red line represents \$0. We can see that the simulated probability of 0 and the simulated average number of steps of 13 exactly match the theoretical values.}
+    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 1$, $N = 26$. The theory results in a probability 0 of bankruptcy and an expected number of steps of 13. The horizontal green line represents \$N and the horizontal red line represents \$0. We can see that the simulated probability of 0 and the simulated average number of steps of 13 exactly match the theoretical values.}
     \label{fig:sim4}
 \end{figure}
 
 \begin{figure}[r]
     \centering
     \includegraphics[width=\textwidth]{Simulation5}
-    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 0$, $N = 26$. The theory results in a probability 1 of bankruptcy and an expected number of steps of 13. The horizontal green line represents \$N and the hosrizontal red line represents \$0. We can see that the simulated probability of 1 and the simulated average number of steps of 13 exactly match the theoretical values.}
+    \caption{This is a plot of 1000 simulations with $k = 13$, $p = 0$, $N = 26$. The theory results in a probability 1 of bankruptcy and an expected number of steps of 13. The horizontal green line represents \$N and the horizontal red line represents \$0. We can see that the simulated probability of 1 and the simulated average number of steps of 13 exactly match the theoretical values.}
     \label{fig:sim5}
 \end{figure}
 
 \begin{figure}[r]
     \centering
     \includegraphics[width=\textwidth]{Simulation6}
-    \caption{This is a plot of 1000 simulations with $k = 3$, $p = 0.5$, $N = 26$. The theory results in a probability 0.8846 of bankruptcy and an expected number of steps of 69. The horizontal green line represents \$N and the hosrizontal red line represents \$0. We can see that the simulated probability of 0.898 and the simulated average number of steps of 68.85 match the theoretical values closely.}
+    \caption{This is a plot of 1000 simulations with $k = 3$, $p = 0.5$, $N = 26$. The theory results in a probability 0.8846 of bankruptcy and an expected number of steps of 69. The horizontal green line represents \$N and the horizontal red line represents \$0. We can see that the simulated probability of 0.898 and the simulated average number of steps of 68.85 match the theoretical values closely.}
     \label{fig:sim6}
 \end{figure}
+
+%\newpage
+%\bibliographystyle{plain}
+%\bibliography{bibliography.bib}
 
 %----------------------------------------------------------------------------------------
 

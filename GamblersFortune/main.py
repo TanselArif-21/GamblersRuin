@@ -2,26 +2,32 @@ import pygame
 import random
 from scipy import stats
 
-# Starting fortune
-try:
-    START_Y = int(input('Starting fortune! (Def = 3): '))*10
-except ValueError:
-    START_Y = 30
+# Scale movements in order to speed up the random walk. This is also related to a single movement size on the screen
+SCALE = 10
 
-# Max fortune
+# Max fortune. Multiply by 10 to convert to screen coordinates
 try:
-    MAX_Y = int(input('Max fortune! (Def = 26): '))*10
+    MAX_Y = int(input('Max fortune! (Def = 26): '))*SCALE
 except ValueError:
     MAX_Y = 260
 
-# Min fortune
+# Min fortune. Multiply by 10 to convert to screen coordinates
 try:
-    MIN_Y = int(input('Min fortune! (Def = 0): '))*10
+    MIN_Y = int(input('Min fortune! (Def = 0): '))*SCALE
 except ValueError:
-    MIN_Y = 260
+    MIN_Y = 0
 
-# Scale movements in order to speed up the random walk
-SCALE = 10
+# Starting fortune. Multiply by 10 to convert to screen coordinates
+try:
+    START_Y = float(input('Starting fortune! (Def = int(min + (max - min)/3) = {}): '.format(int((MIN_Y + (MAX_Y - MIN_Y)/3)/SCALE))))*SCALE
+
+    # Check if the starting amount is between the min and max
+    if (START_Y < MIN_Y) or (START_Y > MAX_Y):
+        print('Starting amount must be between min = {} and max = {} inclusive. The default will be used!'.format(int(MIN_Y/SCALE), int(MAX_Y)))
+        raise ValueError
+
+except ValueError:
+    START_Y = int((MIN_Y + (MAX_Y - MIN_Y)/3)/SCALE)*SCALE
 
 # Speed at which the random walk is displayed
 try:
@@ -68,6 +74,7 @@ pygame.display.set_caption("Gambler's Ruin")
 clock = pygame.time.Clock()
 
 
+# Define a Line class to deal with the attributes of a line to be given to Pygame's draw line function
 class Line:
 
     def __init__(self, color, start, end):
@@ -115,8 +122,8 @@ def get_theory():
     :return: A list: [probability of bankruptcy, expected steps]
     '''
     theory = []
-    k = START_Y/SCALE
-    N = MAX_Y/SCALE
+    k = (START_Y-MIN_Y)/SCALE
+    N = (MAX_Y-MIN_Y)/SCALE
 
     # Get the bankrupt probability
     if WIN_PROBABILITY == 0.5:
@@ -181,7 +188,7 @@ def propagate(start, minimum, maximum):
     lines = list()
 
     # This is the start. (0,0) is the top left of the screen. -start is actually +start in terms of value
-    y = minimum - start
+    y = start
 
     # We need the previous y value in order to start the drawing of the next line from this point
     prev_y = y
@@ -235,7 +242,7 @@ def main():
     # Run the simulations
     for i in range(0, total):
         # Run a simulation and store the trajectory and count information
-        lines_temp, count_temp = propagate(START_Y, BOTTOM_LINE_Y, BOTTOM_LINE_Y - MAX_Y)
+        lines_temp, count_temp = propagate(BOTTOM_LINE_Y - START_Y, BOTTOM_LINE_Y - MIN_Y, BOTTOM_LINE_Y - MAX_Y)
 
         # Extend the main count information with the count data from the simulation
         count.extend(count_temp)
@@ -252,7 +259,7 @@ def main():
     # default_lines contains information to draw the objects on the screen that should always be there
     # i.e. the red line representing $0 and the green line representing $M
     default_lines = list()
-    default_lines.append(Line(RED, (0, BOTTOM_LINE_Y), (WIDTH, BOTTOM_LINE_Y)))
+    default_lines.append(Line(RED, (0, BOTTOM_LINE_Y - MIN_Y), (WIDTH, BOTTOM_LINE_Y - MIN_Y)))
     default_lines.append(Line(GREEN, (0, BOTTOM_LINE_Y - MAX_Y), (WIDTH, BOTTOM_LINE_Y - MAX_Y)))
 
     # Form a final list of lines which contain the default lines and the simulation lines
@@ -262,6 +269,8 @@ def main():
     theory = get_theory()
 
     step = 0
+
+    # Loop through all the steps. This will keep refreshing the screen until the 'X' is pressed
     while True:
         # Quit if the X is pressed
         for event in pygame.event.get():
@@ -270,7 +279,7 @@ def main():
                 quit()
 
         # We want to progress the simulation step by step. The first 2 elements of the final_lines list are the
-        # objects that are always there
+        # objects that are always there, in this case the $0 and $N lines
         if step < len(lines):
             draw_canvas(final_lines[:step+2], sum(count[:step]), sim_no[step], theory)
         else:

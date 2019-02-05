@@ -1,15 +1,8 @@
 ﻿PREFACE
 
-The following are necessary conditions for reading this article:
-- You have a lot of spare time
-- Like me, you enjoy watching simulations run their course towards verifying theoretical results
-- You love gambling but don't know how to (unfortunately, this article won't help you become wiser in this department)
-- You want to watch a gambler lose all his money over and over again! - When you have a lot of time to burn, this may class as excitement
-- You're interested in Random Walks
-
 This article has 4 sections:
-1- Introduction: Introduction to the problem
-2- Methodology: How the simulation will be conducted
+1- Introduction: Introduction to the gambler's ruin problem
+2- Methodology: How the simulation will be carried out
 3- Pseudocode: Summary of the Python Code
 4- Theory: A summary of the theory
 
@@ -79,7 +72,7 @@ def draw_canvas(lines, count, step, theory):
     :param step: an integer to specify which step in the simulation to display to
     :param theory: a list of 2 floats containing [theoretical probability, theoretical expected steps]
     '''
-    # Some code
+    # Some code containing the following code: pygame.draw.line(game_display, line.color, line.start, line.end)
 
 
 Define a function to deal with the stop condition:
@@ -129,5 +122,17 @@ def main():
 
 The full annotated code can be found here: https://github.com/TanselArif-21/GamblersRuin
 
+
 THEORY
 
+The theoretical solution to the probability of bankruptcy involves forming a difference equation by conditioning the probability of bankruptcy on the first gamble:
+
+u_k = P(wins first gamble) × u_{k+1} + P(loses first gamble) × u_{k−1}
+
+The theoretical solution to the expected number of steps is also conditioned on the first gamble:
+
+n=p×(1+E_{n+1}) +q×(1+E_{n−1})
+
+where u_i and E_i are the probability of bankruptcy and expected number of steps with initial fortune i respectively.
+
+The full theory and derivation can be found here: https://github.com/TanselArif-21/GamblersRuin
